@@ -306,6 +306,15 @@ void ReviewClient::upload_paper() {
   if (blind.empty())
     blind = "single";
 
+  std::cout << "Research fields (comma-separated, optional): ";
+  std::string fields = read_line();
+
+  std::cout << "Keywords (comma-separated, optional): ";
+  std::string keywords = read_line();
+
+  std::cout << "Conflict usernames (comma-separated, optional): ";
+  std::string conflicts = read_line();
+
   auto file_data = read_file(file_path);
   if (file_data.empty()) {
     std::cerr << "Failed to read file\n";
@@ -316,6 +325,15 @@ void ReviewClient::upload_paper() {
   msg.command = protocol::Command::UPLOAD_PAPER;
   msg.params["title"] = title;
   msg.params["blind"] = blind;
+  if (!fields.empty()) {
+    msg.params["fields"] = fields;
+  }
+  if (!keywords.empty()) {
+    msg.params["keywords"] = keywords;
+  }
+  if (!conflicts.empty()) {
+    msg.params["conflict_usernames"] = conflicts;
+  }
   msg.body = file_data;
 
   if (!send_message(msg)) {
