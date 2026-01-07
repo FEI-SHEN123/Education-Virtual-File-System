@@ -120,17 +120,8 @@ private:
                             const std::string &username);
   protocol::Role session_role(const std::string &session_id);
 
-  // Paper state helpers
-  struct PaperStatus {
-    protocol::ReviewRound round{protocol::ReviewRound::ROUND1};
-    protocol::LifecycleState state{protocol::LifecycleState::SUBMITTED};
-    protocol::Decision decision{protocol::Decision::PENDING};
-    protocol::BlindPolicy blind{protocol::BlindPolicy::SINGLE_BLIND};
-  };
-
-  bool load_paper_status(const std::string &paper_dir, PaperStatus &status);
-  bool save_paper_status(const std::string &paper_dir,
-                         const PaperStatus &status);
+  PaperStatus load_paper_status(const std::string &paper_dir,
+                                PaperStatus &status); // for legacy compat
   std::string get_round_dir(const std::string &paper_dir,
                             const PaperStatus &status);
 };

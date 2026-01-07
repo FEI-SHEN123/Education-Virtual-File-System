@@ -147,3 +147,77 @@ cd build
    - **崩溃恢复与校验**：块级 checksum 保存到 `.checksum`，读时校验并告警。
 
 - **GUI 客户端**
+
+
+## 菜单视图与端到端操作流程
+
+**作者菜单（Author Menu）**
+- Upload Paper `--` 上传新论文或修订至 VFS，会生成版本与 metadata
+- View Paper Status `--` 显示当前轮次、盲审、决策与版本/评审列表
+- Submit Revision `--` 上传修订稿，系统推进轮次并存储新版本
+- Download Reviews `--` 获取当前轮次审稿意见，双盲自动匿名 reviewer
+- Logout `--` 注销当前 author 会话
+
+**审稿人菜单（Reviewer Menu）**
+- Download Paper `--` 下载分配 scholar 的论文最新版本
+- Submit Review `--` 上传评审文本记录到对应轮次目录
+- View Review Status `--` 查看已提交评审/状态摘要
+- Logout `--` 注销 reviewer 会话
+
+**编辑菜单（Editor Menu）**
+- Assign Reviewer `--` 指定 reviewer、轮次与盲审策略、并更新 assignment 文件
+- Make Decision `--` 记录 accept/major/minor/reject 决策并更新 lifecycle state
+- View Pending Papers `--` 列出尚未决策/未完成的稿件与当前状态
+- View Review Progress `--` 查询当前轮次的评审提交情况
+- Logout `--` 注销 editor 会话
+
+**管理员菜单（Admin Menu）**
+- Create User `--` 创建新账号（author/reviewer/editor/admin）
+- View System Status `--` 展示 VFS、缓存、日志、快照与用户/论文统计
+- Create Backup `--` 触发 COW 快照备份 （未实现）
+- List Users `--` 查看所有注册用户及角色
+- List Backups `--` 列出已有快照
+- Restore Backup `--` 恢复指定快照并可选重放日志
+- Logout `--` 注销 admin 会话
+
+### 详细操作流程（含输入/输出） 
+!!!!!!!!!!!!!!!!!!!!
+路径是自己的本地路径，所有路径必须使用绝对路径重新写在终端中。
+！！！！！！！！！！
+1. **作者上传论文**
+   - 登录：`alice / password`.
+   - 菜单选择：`1. Upload Paper`.
+   - 标题：`AI Research`，本地文件路径：`"/home/cz/os homework/Education-Virtual-File-System/data/uploaded_paper/对账系统功能升级.docx"`.
+   - 盲审策略：`double`.
+   - 输出：`201 Created` / `paper_id=P1`；VFS 内 `/papers/P1/versions/v1.pdf`与`status.json` 都生成，记录 `current_round=R1` 与 `blind=double`.
+   - Logout。
+2. **编辑分配审稿人**
+   - 登录：`charlie / password`.
+   - 菜单选择：`1. Assign Reviewer`.
+   - 输入：`paper_id=P1`、`reviewer=bob`、`round=R1`、`blind=double`.
+   - 输出：`Reviewer assigned`；`assignments.txt` 写入 `R1:bob`；`status.json` 变为 `UNDER_REVIEW`。
+3. **审稿人下载/提交评审**
+   - 登录：`bob / password`.
+   - `1. Download Paper` 输入 `P1`。
+   - 输出：最新版本 PDF；若未分配或轮次不符返回 403。保存路径输入"/home/cz/os homework/Education-Virtual-File-System/data/downloaded_paper"
+   - `2. Submit Review` 输入 `P1`, 轮次默认 `R1`。
+   - 输出：`Review submitted`；VFS 路径 `/home/cz/os homework/Education-Virtual-File-System/data/review_file/bobP1.txt`。
+   - Logout。
+4. **作者查看评审**
+   - 登录：`alice / password`.
+   - `3. View Paper Status` 输入 `P1`，看到轮次=R1，Blind=double，Decision=pending。
+   - `4. Download Reviews` 输入 `P1`，输出中 reviewer 名称为 `Reviewer_1`、`Reviewer_2` 等（双盲匿名）。 Logout。
+5. **编辑做决策**
+   - 登录：`charlie / password`.
+   - `2. Make Decision` 输入 `P1`, `major_revision`.
+   - 输出：`Decision updated`，`status.json` 记录 `decision=major_revision`、`state=REBUTTAL`、`current_round=REBUTTAL`。  
+   - 可再 `View Pending Papers` 或 `View Review Progress` 查看状态。
+6. **管理员检查/备份**
+   - 登录：`admin / admin123`.
+   - `2. View System Status`：查看 cache/journal stats 与 snapshot count。
+   - `3. Create Backup` 输入 `bk_2026_01`.  （此功能暂未实现）
+   - `5. List Backups`、`6. Restore Backup bk_2026_01` 验证快照可回滚，`View System Status` 显示 `recovered=yes`。
+   - （可选）`1. Create User` / `4. List Users` 管理账户。
+   - Logout。
+
+这样从作者上传开始一路贯穿审稿人、编辑、管理员的操作，构成端到端测试脚本。

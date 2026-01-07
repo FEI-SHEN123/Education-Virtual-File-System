@@ -382,7 +382,7 @@ uint32_t VirtualFileSystem::allocate_inode() {
 
 bool VirtualFileSystem::free_inode(uint32_t inode_num) {
   Inode inode;
-  std::memset(&inode, 0, sizeof(Inode));
+  inode = Inode();
   if (write_inode(inode_num, inode)) {
     superblock_.free_inodes++;
     return true;
@@ -611,7 +611,8 @@ void VirtualFileSystem::load_snapshots() {
           SnapshotMeta meta;
           meta.name = snap_name;
           meta.diff_path = entry.path().string();
-          meta.index_path = entry.path().replace_extension(".idx").string();
+          std::filesystem::path idx_path = entry.path();
+          meta.index_path = idx_path.replace_extension(".idx").string();
           // rebuild block list
           std::ifstream diff(meta.diff_path, std::ios::binary);
           while (diff) {
